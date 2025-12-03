@@ -145,9 +145,14 @@ The app will be available at `https://your-project.vercel.app`
 
 Make sure to add the same environment variables in your Vercel project settings:
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase publishable key (or anon key if using legacy format)
+- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase secret key (or service_role key if using legacy format)
+- `SUPABASE_DB_PASSWORD` - Your database password (optional, mainly for direct PostgreSQL connections)
+- `GOOGLE_OAUTH_CLIENT_ID` - Your Google OAuth Client ID
+- `GOOGLE_OAUTH_CLIENT_SECRET` - Your Google OAuth Client Secret
+
+**Note**: The variable names are the same regardless of whether you use the new format (publishable/secret keys) or legacy format (anon/service_role keys) from Supabase. The publishable key maps to `NEXT_PUBLIC_SUPABASE_ANON_KEY` and the secret key maps to `SUPABASE_SERVICE_ROLE_KEY`.
 
 Also update the Google OAuth redirect URI in Google Cloud Console to include your Vercel domain.
 
