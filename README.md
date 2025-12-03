@@ -37,14 +37,19 @@ npm install
 ### 2. Set Up Supabase
 
 1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to **SQL Editor** and run the migration file:
-   - Copy the contents of `supabase/migrations/001_initial_schema.sql`
-   - Paste and execute in the SQL Editor
+2. Run the database migrations:
+
+   - Go to **SQL Editor** in your Supabase dashboard
+   - Run `supabase/migrations/001_initial_schema.sql` (creates entries table and RLS policies)
+   - Run `supabase/migrations/002_fix_rls_policy.sql` (fixes RLS policies for entries)
+   - Run `supabase/migrations/003_storage_policies.sql` (creates Storage RLS policies)
 
 3. Set up Storage:
+
    - Go to **Storage** in your Supabase dashboard
    - Create a new bucket named `tree-photos`
-   - Set it to **Public** (or configure RLS policies as needed)
+   - Set it to **Public** (toggle "Public bucket" to ON)
+   - **Note**: The Storage RLS policies are created in migration `003_storage_policies.sql` which allows public read access and authenticated uploads
 
 4. Configure Google OAuth:
    - Go to **Authentication** > **Providers** > **Google**
@@ -58,7 +63,30 @@ npm install
 
 ### 3. Environment Variables
 
-Create a `.env.local` file in the root directory:
+1. In your Supabase dashboard:
+
+   - Click the **Settings** icon (gear icon) in the left sidebar
+   - Under **PROJECT SETTINGS**, click on **API Keys**
+   - If you don't see any keys, click **"+ New secret key"** to create one
+   - You'll see two tabs: **"Publishable and secret API keys"** (new format) and **"Legacy anon, service_role API keys"** (old format)
+   - You can use either format - both work with the Supabase client libraries
+
+2. Copy the following values:
+
+   **Option A: Using New Format (Recommended)**
+
+   - **Project URL**: Go to **Settings** > **General** to find your Project URL (or check the URL in your browser - it's `https://<project-ref>.supabase.co`)
+   - **Publishable key** (this is `NEXT_PUBLIC_SUPABASE_ANON_KEY`) - from the "Publishable key" field
+   - **Secret key** (this is `SUPABASE_SERVICE_ROLE_KEY`) - from the "Secret keys" table, click the eye icon to reveal it - **Keep this secret!**
+
+   **Option B: Using Legacy Format**
+
+   - Switch to the **"Legacy anon, service_role API keys"** tab
+   - **Project URL** - found at the top
+   - **anon public** key (this is `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+   - **service_role** key (this is `SUPABASE_SERVICE_ROLE_KEY`) - **Keep this secret!**
+
+3. Create a `.env.local` file in the project root:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
@@ -71,11 +99,18 @@ GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
 GOOGLE_OAUTH_CLIENT_SECRET=your_google_oauth_client_secret
 ```
 
-**Note**: All sensitive values should be stored in your `.env.local` file (which is gitignored). The database password is mainly needed for direct PostgreSQL connections. The Google OAuth credentials are used when configuring Supabase Auth, but the actual authentication is handled by Supabase.
+**Important**: Replace all placeholder values with your actual credentials. Store this in your `.env.local` file (which is gitignored and will NOT be committed to git).
 
-You can find these values in your Supabase project settings under **API**.
+- The Supabase client libraries use the API keys above, not the database password. The password is mainly needed for direct PostgreSQL connections.
+- The Google OAuth credentials are used when configuring Supabase Auth in the dashboard. The actual authentication flow is handled by Supabase.
 
-### 4. Generate PWA Icons
+### 4. Install Dependencies
+
+```bash
+npm install
+```
+
+### 5. Generate PWA Icons (Optional but Recommended)
 
 The app requires PWA icons. You can:
 
@@ -85,7 +120,9 @@ The app requires PWA icons. You can:
 
 For now, you can use placeholder icons or skip this step (the app will work, but PWA installation may not be optimal).
 
-### 5. Run the Development Server
+See `scripts/generate-icons.md` for detailed instructions.
+
+### 6. Run the Development Server
 
 ```bash
 npm run dev
@@ -107,6 +144,7 @@ The app will be available at `https://your-project.vercel.app`
 ### Environment Variables for Production
 
 Make sure to add the same environment variables in your Vercel project settings:
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -152,14 +190,19 @@ Also update the Google OAuth redirect URI in Google Cloud Console to include you
 ## Troubleshooting
 
 ### Location not working
+
 - Ensure you've granted location permissions in your browser
 - Try refreshing the page and allowing permissions again
 
 ### Images not uploading
+
 - Check that the `tree-photos` bucket exists in Supabase Storage
-- Verify the bucket is set to public or has proper RLS policies
+- Verify the bucket is set to **Public** (toggle "Public bucket" to ON)
+- Ensure you've run the Storage RLS policies migration (`003_storage_policies.sql`)
+- Check browser console for specific error messages
 
 ### Authentication issues
+
 - Verify Google OAuth credentials are correctly configured
 - Check that redirect URIs match in both Google Cloud Console and Supabase
 
