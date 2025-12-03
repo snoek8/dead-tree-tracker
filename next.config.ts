@@ -3,10 +3,6 @@ import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Disable Turbopack for production builds since next-pwa requires webpack
-  experimental: {
-    turbo: undefined,
-  },
 };
 
 const pwaConfig = withPWA({
