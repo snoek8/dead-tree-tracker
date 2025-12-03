@@ -43,6 +43,7 @@ npm install
    - Run `supabase/migrations/001_initial_schema.sql` (creates entries table and RLS policies)
    - Run `supabase/migrations/002_fix_rls_policy.sql` (fixes RLS policies for entries)
    - Run `supabase/migrations/003_storage_policies.sql` (creates Storage RLS policies)
+   - Run `supabase/migrations/004_add_username_support.sql` (adds username support functions)
 
 3. Set up Storage:
 
@@ -52,6 +53,7 @@ npm install
    - **Note**: The Storage RLS policies are created in migration `003_storage_policies.sql` which allows public read access and authenticated uploads
 
 4. Configure Google OAuth:
+
    - Go to **Authentication** > **Providers** > **Google**
    - Enable Google provider
    - Add your Google OAuth credentials:
@@ -60,6 +62,19 @@ npm install
      - Create OAuth 2.0 credentials
      - Add authorized redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`
      - Copy Client ID and Client Secret to Supabase
+
+5. Configure URL Configuration (Important for OAuth redirects):
+   - Go to **Authentication** > **URL Configuration** (under CONFIGURATION section)
+   - For local development, set **Site URL** to: `http://localhost:3000`
+   - Add **Redirect URLs**:
+     - `http://localhost:3000/**`
+     - `http://localhost:3000/auth/callback`
+   - **For production**: After deploying to Vercel, update:
+     - **Site URL** to your Vercel domain (e.g., `https://your-app.vercel.app`)
+     - Add production **Redirect URLs**:
+       - `https://your-app.vercel.app/**`
+       - `https://your-app.vercel.app/auth/callback`
+     - Keep localhost URLs for local development
 
 ### 3. Environment Variables
 
@@ -154,7 +169,21 @@ Make sure to add the same environment variables in your Vercel project settings:
 
 **Note**: The variable names are the same regardless of whether you use the new format (publishable/secret keys) or legacy format (anon/service_role keys) from Supabase. The publishable key maps to `NEXT_PUBLIC_SUPABASE_ANON_KEY` and the secret key maps to `SUPABASE_SERVICE_ROLE_KEY`.
 
-Also update the Google OAuth redirect URI in Google Cloud Console to include your Vercel domain.
+### Important: Update Supabase URL Configuration for Production
+
+After deploying to Vercel, you **must** update the Supabase URL Configuration:
+
+1. Go to your Supabase dashboard → **Authentication** → **URL Configuration**
+2. Update **Site URL** to your Vercel domain (e.g., `https://your-app.vercel.app`)
+3. Add your Vercel domain to **Redirect URLs**:
+   - `https://your-app.vercel.app/**`
+   - `https://your-app.vercel.app/auth/callback`
+4. Keep `http://localhost:3000/**` for local development
+5. Click **Save**
+
+**Without this step, OAuth will redirect to localhost instead of your production domain!**
+
+You may also need to update the Google OAuth redirect URI in Google Cloud Console to include your Vercel domain.
 
 ## Project Structure
 
@@ -210,6 +239,10 @@ Also update the Google OAuth redirect URI in Google Cloud Console to include you
 
 - Verify Google OAuth credentials are correctly configured
 - Check that redirect URIs match in both Google Cloud Console and Supabase
+- **OAuth redirects to localhost in production**: Update Supabase **Authentication** > **URL Configuration**:
+  - Set **Site URL** to your production domain
+  - Add your production domain to **Redirect URLs**
+  - See "Important: Update Supabase URL Configuration for Production" section above
 
 ## License
 
