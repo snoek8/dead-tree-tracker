@@ -24,10 +24,13 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      // Ensure we use the current origin (works for both localhost and production)
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;
