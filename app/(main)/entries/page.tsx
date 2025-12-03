@@ -32,11 +32,11 @@ export default function EntriesPage() {
       if (!response.ok) {
         throw new Error("Failed to load entries");
       }
-      const data = await response.json();
+      const data: TreeEntry[] = await response.json();
 
       setEntries(data || []);
       if (user) {
-        setUserEntries(data?.filter((e) => e.user_id === user.id) || []);
+        setUserEntries(data?.filter((e: TreeEntry) => e.user_id === user.id) || []);
       }
     } catch (error) {
       console.error("Error loading entries:", error);
