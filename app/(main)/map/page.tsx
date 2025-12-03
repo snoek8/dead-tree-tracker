@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { TreeEntry } from "@/lib/types";
 import Link from "next/link";
+import TopContributors from "@/components/Contributors/TopContributors";
 
 const MapComponent = dynamic(() => import("@/components/Map/MapComponent"), {
   ssr: false,
@@ -13,7 +13,6 @@ const MapComponent = dynamic(() => import("@/components/Map/MapComponent"), {
 export default function MapPage() {
   const [entries, setEntries] = useState<TreeEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     loadEntries();
@@ -21,12 +20,11 @@ export default function MapPage() {
 
   const loadEntries = async () => {
     try {
-      const { data, error } = await supabase
-        .from("entries")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const response = await fetch("/api/entries");
+      if (!response.ok) {
+        throw new Error("Failed to load entries");
+      }
+      const data = await response.json();
       setEntries(data || []);
     } catch (error) {
       console.error("Error loading entries:", error);
@@ -58,6 +56,9 @@ export default function MapPage() {
         >
           View All Entries
         </Link>
+      </div>
+      <div className="absolute right-4 top-4 z-[1000]">
+        <TopContributors limit={5} showTitle={true} compact={true} />
       </div>
       <MapComponent entries={entries} />
     </div>
