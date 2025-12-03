@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster";
 import { TreeEntry } from "@/lib/types";
 
 // Fix for default marker icons in Next.js
@@ -24,6 +27,7 @@ export default function MapComponent({ entries }: MapComponentProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -76,6 +80,16 @@ export default function MapComponent({ entries }: MapComponentProps) {
       return;
     }
 
+    // Clear existing cluster group
+    if (clusterGroupRef.current) {
+      try {
+        map.removeLayer(clusterGroupRef.current);
+      } catch (e) {
+        // Cluster group might already be removed
+      }
+      clusterGroupRef.current = null;
+    }
+
     // Clear existing markers
     markersRef.current.forEach((marker) => {
       try {
@@ -88,6 +102,14 @@ export default function MapComponent({ entries }: MapComponentProps) {
     });
     markersRef.current = [];
 
+    // Create marker cluster group
+    const markerClusterGroup = (L as any).markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+    });
+
     // Add markers for each entry
     entries.forEach((entry) => {
       if (!mapRef.current) return;
@@ -95,42 +117,49 @@ export default function MapComponent({ entries }: MapComponentProps) {
       try {
         const marker = L.marker([entry.latitude, entry.longitude]);
 
-        // Check if map is ready before adding
-        if (map && map.getContainer()) {
-          marker.addTo(map);
+        const usernameDisplay = entry.username
+          ? `@${entry.username}`
+          : "Anonymous";
+        
+        const popupContent = `
+          <div style="max-width: 300px;">
+            <img src="${
+              entry.photo_url
+            }" alt="Dead tree" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;" />
+            <p style="margin: 4px 0;"><strong>Posted by:</strong> ${usernameDisplay}</p>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${new Date(
+              entry.created_at
+            ).toLocaleDateString()}</p>
+            ${
+              entry.notes
+                ? `<p style="margin: 4px 0;"><strong>Notes:</strong> ${entry.notes}</p>`
+                : ""
+            }
+            <p style="margin: 4px 0; font-size: 12px; color: #666;">Location: ${entry.latitude.toFixed(
+              6
+            )}, ${entry.longitude.toFixed(6)}</p>
+          </div>
+        `;
 
-          const popupContent = `
-            <div style="max-width: 300px;">
-              <img src="${
-                entry.photo_url
-              }" alt="Dead tree" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;" />
-              <p style="margin: 4px 0;"><strong>Date:</strong> ${new Date(
-                entry.created_at
-              ).toLocaleDateString()}</p>
-              ${
-                entry.notes
-                  ? `<p style="margin: 4px 0;"><strong>Notes:</strong> ${entry.notes}</p>`
-                  : ""
-              }
-              <p style="margin: 4px 0; font-size: 12px; color: #666;">Location: ${entry.latitude.toFixed(
-                6
-              )}, ${entry.longitude.toFixed(6)}</p>
-            </div>
-          `;
-
-          marker.bindPopup(popupContent);
-          markersRef.current.push(marker);
-        }
+        marker.bindPopup(popupContent);
+        markerClusterGroup.addLayer(marker);
+        markersRef.current.push(marker);
       } catch (error) {
         console.error("Error adding marker:", error);
       }
     });
 
-    // Fit map to show all markers if there are entries
-    if (entries.length > 0 && mapRef.current && markersRef.current.length > 0) {
+    // Add cluster group to map
+    if (map && map.getContainer() && markersRef.current.length > 0) {
+      markerClusterGroup.addTo(map);
+      clusterGroupRef.current = markerClusterGroup;
+
+      // Fit map to show all markers if there are entries
       try {
-        const group = new L.FeatureGroup(markersRef.current);
-        mapRef.current.fitBounds(group.getBounds().pad(0.1));
+        const bounds = markerClusterGroup.getBounds();
+        if (bounds.isValid()) {
+          map.fitBounds(bounds.pad(0.1));
+        }
       } catch (error) {
         console.error("Error fitting bounds:", error);
       }

@@ -6,6 +6,7 @@ export interface TreeEntry {
   longitude: number;
   created_at: string;
   notes?: string;
+  username?: string;
   user?: {
     email?: string;
   };

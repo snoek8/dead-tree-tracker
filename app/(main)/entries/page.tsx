@@ -10,6 +10,7 @@ export default function EntriesPage() {
   const [entries, setEntries] = useState<TreeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEntries, setUserEntries] = useState<TreeEntry[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -22,12 +23,16 @@ export default function EntriesPage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
-        .from("entries")
-        .select("*")
-        .order("created_at", { ascending: false });
+      if (user) {
+        setCurrentUserId(user.id);
+      }
 
-      if (error) throw error;
+      // Use API route to get entries with usernames
+      const response = await fetch("/api/entries");
+      if (!response.ok) {
+        throw new Error("Failed to load entries");
+      }
+      const data = await response.json();
 
       setEntries(data || []);
       if (user) {
@@ -80,7 +85,7 @@ export default function EntriesPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {entries.map((entry) => {
-          const isOwner = userEntries.some((e) => e.id === entry.id);
+          const isOwner = currentUserId && entry.user_id === currentUserId;
           return (
             <div
               key={entry.id}
@@ -95,6 +100,9 @@ export default function EntriesPage() {
                 />
               </div>
               <div className="p-4">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {entry.username ? `@${entry.username}` : "Anonymous"}
+                </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {new Date(entry.created_at).toLocaleString()}
                 </p>
