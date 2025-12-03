@@ -32,6 +32,11 @@ This guide will help you set up the Dead Tree Tracker PWA from scratch.
    - Copy and paste the entire contents of `supabase/migrations/003_storage_policies.sql`
    - Click "Run"
    - You should see "Success. No rows returned"
+6. Run the fourth migration (Username support):
+   - Click "New Query" again
+   - Copy and paste the entire contents of `supabase/migrations/004_add_username_support.sql`
+   - Click "Run"
+   - You should see "Success. No rows returned"
 
 ### Create Storage Bucket
 
@@ -74,6 +79,28 @@ This guide will help you set up the Dead Tree Tracker PWA from scratch.
    - Toggle "Enable Google provider" to ON
    - Paste your **Client ID** and **Client Secret**
    - Click "Save"
+
+### Configure URL Configuration (Important for Production)
+
+**For Local Development:**
+1. Go to **Authentication** in the left sidebar
+2. Click **"URL Configuration"** (under the CONFIGURATION section)
+3. Set **Site URL** to: `http://localhost:3000`
+4. Add **Redirect URLs**:
+   - `http://localhost:3000/**`
+   - `http://localhost:3000/auth/callback`
+5. Click **Save**
+
+**For Production (After deploying to Vercel):**
+1. Go to **Authentication** > **URL Configuration**
+2. Update **Site URL** to your production domain (e.g., `https://your-app.vercel.app`)
+3. Add **Redirect URLs**:
+   - `https://your-app.vercel.app/**`
+   - `https://your-app.vercel.app/auth/callback`
+   - Keep `http://localhost:3000/**` for local development
+4. Click **Save**
+
+**Important**: Without this configuration, OAuth redirects will fail in production and redirect to localhost instead of your Vercel domain.
 
 ## Step 2: Environment Variables
 
@@ -182,5 +209,9 @@ Once everything is working locally:
 
 1. Push code to GitHub
 2. Deploy to Vercel (see README.md for instructions)
-3. Update Google OAuth redirect URI to include your Vercel domain
-4. Add environment variables in Vercel project settings
+3. **Update Supabase URL Configuration** (see "Configure URL Configuration" section above):
+   - Go to **Authentication** > **URL Configuration** in Supabase
+   - Update **Site URL** to your Vercel domain
+   - Add your Vercel domain to **Redirect URLs**
+4. Update Google OAuth redirect URI in Google Cloud Console to include your Vercel domain (if needed)
+5. Add environment variables in Vercel project settings
